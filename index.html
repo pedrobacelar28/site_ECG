@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classificação de Exames</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css" rel="stylesheet">
+    <style>
+        body {
+            display: flex;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            display: flex;
+            width: 100%;
+            height: 100%;
+        }
+        .image-section, .classification-section {
+            flex: 1;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .image-section {
+            border-right: 1px solid #ddd;
+        }
+        .classification-section {
+            display: flex;
+            flex-direction: column;
+        }
+        #exam-image {
+            width: 100%; /* Ocupa toda a largura do container */
+            height: 100%; /* Ocupa toda a altura do container */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden; /* Esconde qualquer parte da imagem que ultrapasse o container */
+        }
+        #image {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            border: none; /* Remove borda */
+            outline: none; /* Remove outline */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="image-section">
+            <h2>Exame</h2>
+            <div id="exam-image">
+                <img id="image" src="exam.png" alt="Exame">
+            </div>
+        </div>
+        <div class="classification-section">
+            <h2>Classificação</h2>
+            <label for="classificacao1">Classificação 1:</label>
+            <input type="text" id="classificacao1">
+            
+            <label for="classificacao2">Classificação 2:</label>
+            <input type="text" id="classificacao2">
+            
+            <button type="submit">Salvar</button>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
+    <script>
+        window.onload = function() {
+            var image = document.getElementById('image');
+            var cropper = new Cropper(image, {
+                zoomable: true,          // Permite zoom
+                scalable: true,          // Permite redimensionar
+                movable: true,           // Permite mover a imagem
+                viewMode: 0,             // Libera o movimento fora do container
+                dragMode: 'move',        // Permite mover a imagem
+                cropBoxMovable: true,    // Permite mover a caixa de recorte
+                cropBoxResizable: true,  // Permite redimensionar a caixa de recorte
+                guides: false,           // Remove guias de corte
+                highlight: false,        // Remove destaque de área selecionada
+                background: false,       // Remove o fundo escurecido
+                responsive: true,        // Habilita redimensionamento responsivo
+                toggleDragModeOnDblclick: false, // Desativa a troca para modo de recorte no duplo clique
+                autoCrop: false          // Desativa o recorte automático
+            });
+
+            // Remover bordas acinzentadas fora da imagem ao ajustar o zoom
+            cropper.clear(); // Remove o crop inicial
+        };
+    </script>
+</body>
+</html>
