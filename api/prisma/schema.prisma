@@ -16,8 +16,6 @@ model User {
   nome String
   senha String
   cargo String
-  tokenRecPass  String?  
-  dateRecPass   DateTime?
 }
 
 model ECG {

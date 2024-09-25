@@ -1,11 +1,12 @@
 import dotenv from "dotenv";
 import cors, { CorsOptions } from "cors";
 import express, { Express } from "express";
-/*import UserRouter from "../src/domains/User/controllers";
-import ECGRouter from "../src/domains/ECG/controllers"; // Atualização para incluir o ECGRouter
-import errorHandler from '../src/middlewares/erroHandler';
+import cookieParser from "cookie-parser"; // Corrigido a importação do cookieParser
 
-import cookieParser = require("cookie-parser");*/
+// Importações das rotas e middlewares
+import UserController from "../src/domains/User/controller/userController.ts";
+import ECGController from "../src/domains/ECG/controller/ecgController.ts"; 
+import errorHandler from "../src/middlewares/errorHandler.ts"; // Certifique-se de que o caminho está correto
 
 dotenv.config();
 
@@ -23,10 +24,14 @@ app.use(express.urlencoded({
 }));
 
 // Rotas
-app.use("/api/users", UserRouter);
-app.use("/api/ecg", ECGRouter); // Atualização para incluir o ECGRouter
+app.use("/api/users", UserController);
+app.use("/api/ecg", ECGController); 
 
 // Middleware de tratamento de erros
 app.use(errorHandler);
+
+app.use((req, res, next) => {
+    res.status(404).json({ error: 'Rota não encontrada.' });
+});
 
 export default app;

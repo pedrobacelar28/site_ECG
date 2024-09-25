@@ -1,142 +1,128 @@
 import { Request, Response, NextFunction } from "express";
 import { sign, verify, JwtPayload } from "jsonwebtoken";
 import { compare } from "bcryptjs";
-import prisma from "../../config/prismaclient";
-import UserService from "../services/UserService";
+import UserService from "../domains/User/service/userService";
 import { User } from "@prisma/client";
-import { TokenError, PermissionError, InvalidRouteError, InvalidParamError, LoginError } from "../errors";
-import statusCodes from "../constants/statusCodes";
+
+// Estender a interface Request para incluir a propriedade user
+declare global {
+    namespace Express {
+        interface Request {
+            user?: {
+                id: number;
+                email: string;
+                cargo: string;
+                nome: string;
+            };
+        }
+    }
+}
 
 // Função para gerar o token JWT
 function generateJWT(user: User, res: Response) {
-	const body = {
-		id: user.id,
-		email: user.email,
-		role: user.cargo, // ajuste conforme sua estrutura de dados
-		name: user.nome
-	};
+    const body = {
+        id: user.id,
+        email: user.email,
+        role: user.cargo, // ajuste conforme sua estrutura de dados
+        name: user.nome
+    };
 
-	const token = sign({ user: body }, process.env.SECRET_KEY || "", { expiresIn: process.env.JWT_EXPIRATION });
+    const token = sign({ user: body }, process.env.SECRET_KEY || "", { expiresIn: process.env.JWT_EXPIRATION });
 
-	res.cookie("jwt", token, {
-		httpOnly: true,
-		secure: process.env.NODE_ENV !== "development",
-	});
+    res.cookie("jwt", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV !== "development", // Use secure cookies only in production
+        sameSite: "strict" // Pode ser útil para evitar CSRF
+    });
 }
 
-// Extrair token do cookie
-function cookieExtractor(req: Request) {
-	let token = null;
-
-	if (req.cookies) {
-		token = req.cookies["jwt"];
-	}
-
-	return token;
+// Função para extrair o token do cookie
+function cookieExtractor(req: Request): string | null {
+    return req.cookies ? req.cookies["jwt"] : null;
 }
 
-// Verificar JWT e autenticar o usuário
+// Middleware para verificar JWT e autenticar o usuário
 export function verifyJWT(req: Request, res: Response, next: NextFunction) {
-	try {
-		const token = cookieExtractor(req);
-		if (token) {
-			const decoded = verify(token, process.env.SECRET_KEY || "") as JwtPayload;
-			req.user = decoded.user;
-		}
+    const token = cookieExtractor(req);
+    if (!token) {
+        return res.status(401).json({ error: "Você precisa estar logado para realizar essa ação!" });
+    }
 
-		if (req.user == null) {
-			throw new TokenError("Você precisa estar logado para realizar essa ação!");
-		}
-		next();
-	} catch (error) {
-		next(error);
-	}
+    try {
+        const decoded = verify(token, process.env.SECRET_KEY || "") as JwtPayload;
+        req.user = decoded.user;
+
+        if (!req.user) {
+            return res.status(401).json({ error: "Token inválido ou expirado." });
+        }
+
+        next();
+    } catch (error) {
+        return res.status(401).json({ error: "Token inválido ou expirado." });
+    }
 }
 
 // Função de login tradicional
 export async function login(req: Request, res: Response, next: NextFunction) {
-	try {
-		const user = await prisma.user.findUnique({
-			where: {
-				email: req.body.email
-			}
-		});
+    try {
+        const user = await UserService.findByEmail(req.body.email);
 
-		if (!user) {
-			throw new PermissionError("Email e/ou senha incorretos!");
-		}
-		if (user.senha != null) {
-			const match = await compare(req.body.password, user.senha);
-			if (!match) {
-				throw new PermissionError("Email e/ou senha incorretos!");
-			}
-		}
-		if (req.body.password == null) {
-			throw new InvalidParamError("Você deve inserir uma senha!");
-		}
+        if (!user) {
+            return res.status(401).json({ error: "Email e/ou senha incorretos!" });
+        }
 
-		generateJWT(user, res);
-		res.status(statusCodes.SUCCESS).json("Login realizado com sucesso!");
-	} catch (error) {
-		next(error);
-	}
+        const match = await compare(req.body.password, user.senha);
+        if (!match) {
+            return res.status(401).json({ error: "Email e/ou senha incorretos!" });
+        }
+
+        generateJWT(user, res);
+        return res.status(200).json({ message: "Login realizado com sucesso!" });
+    } catch (error) {
+        next(error);
+    }
 }
 
-// Verificar se o usuário não está logado
-export async function notLoggedIn(req: Request, res: Response, next: NextFunction) {
-	try {
-		const token = cookieExtractor(req);
+// Middleware para verificar se o usuário já está logado
+export function notLoggedIn(req: Request, res: Response, next: NextFunction) {
+    const token = cookieExtractor(req);
 
-		if (token) {
-			res.status(statusCodes.BAD_REQUEST);
-			throw new LoginError("Você já está logado!");
-		}
+    if (token) {
+        return res.status(400).json({ error: "Você já está logado!" });
+    }
 
-		next();
-	} catch (error) {
-		next(error);
-	}
+    next();
 }
 
 // Função de logout
-export async function logout(req: Request, res: Response, next: NextFunction) {
-	try {
-		res.clearCookie("jwt", {
-			httpOnly: true,
-			secure: process.env.NODE_ENV !== "development"
-		});
-		const token = cookieExtractor(req);
-		if (!token) {
-			res.status(statusCodes.BAD_REQUEST);
-			throw new TokenError("Faça o logout novamente.");
-		}
+export function logout(req: Request, res: Response, next: NextFunction) {
+    try {
+        res.clearCookie("jwt", {
+            httpOnly: true,
+            secure: process.env.NODE_ENV !== "development",
+            sameSite: "strict"
+        });
 
-		res.status(statusCodes.SUCCESS).json("Logout realizado com sucesso!");
-	} catch (error) {
-		next(error);
-	}
+        return res.status(200).json({ message: "Logout realizado com sucesso!" });
+    } catch (error) {
+        next(error);
+    }
 }
 
 // Verificar se o usuário tem um papel específico
 export function checkRole(allowedRoles: string[]) {
-	return (req: Request, res: Response, next: NextFunction) => {
-		try {
-			const user = req.user as User;
+    return (req: Request, res: Response, next: NextFunction) => {
+        const user = req.user;
 
-			if (!user) {
-				res.status(statusCodes.UNAUTHORIZED);
-				throw new Error("Usuário não autenticado");
-			}
+        if (!user) {
+            return res.status(401).json({ error: "Usuário não autenticado" });
+        }
 
-			const hasPermission = allowedRoles.includes(user.cargo);
-			if (!hasPermission) {
-				res.status(statusCodes.FORBIDDEN);
-				throw new Error("Você não tem permissão para acessar essa rota!");
-			}
+        const hasPermission = allowedRoles.includes(user.cargo);
+        if (!hasPermission) {
+            return res.status(403).json({ error: "Você não tem permissão para acessar essa rota!" });
+        }
 
-			next();
-		} catch (error) {
-			next(error);
-		}
-	};
+        next();
+    };
 }
