@@ -23,7 +23,7 @@ function generateJWT(user: User, res: Response) {
     const body = {
         id: user.id,
         email: user.email,
-        role: user.cargo, // ajuste conforme sua estrutura de dados
+        cargo: user.cargo, // ajuste conforme sua estrutura de dados
         name: user.nome
     };
 
@@ -42,6 +42,7 @@ function cookieExtractor(req: Request): string | null {
 }
 
 // Middleware para verificar JWT e autenticar o usuário
+
 export function verifyJWT(req: Request, res: Response, next: NextFunction) {
     const token = cookieExtractor(req);
     if (!token) {
@@ -51,6 +52,8 @@ export function verifyJWT(req: Request, res: Response, next: NextFunction) {
     try {
         const decoded = verify(token, process.env.SECRET_KEY || "") as JwtPayload;
         req.user = decoded.user;
+
+        console.log("Decoded user:", req.user); // Adicione este log
 
         if (!req.user) {
             return res.status(401).json({ error: "Token inválido ou expirado." });
@@ -71,7 +74,7 @@ export async function login(req: Request, res: Response, next: NextFunction) {
             return res.status(401).json({ error: "Email e/ou senha incorretos!" });
         }
 
-        const match = await compare(req.body.password, user.senha);
+        const match = await compare(req.body.senha, user.senha);
         if (!match) {
             return res.status(401).json({ error: "Email e/ou senha incorretos!" });
         }
@@ -113,6 +116,8 @@ export function logout(req: Request, res: Response, next: NextFunction) {
 export function checkRole(allowedRoles: string[]) {
     return (req: Request, res: Response, next: NextFunction) => {
         const user = req.user;
+
+        console.log("User role:", user?.cargo); // Adicione este log
 
         if (!user) {
             return res.status(401).json({ error: "Usuário não autenticado" });

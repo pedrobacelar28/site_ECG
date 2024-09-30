@@ -1,6 +1,6 @@
 import { Router, Request, Response, NextFunction } from "express";
 import UserService from "../service/userService";
-import { login as loginMiddleware, logout as logoutMiddleware, notLoggedIn, verifyJWT } from "../../../middlewares/auth";
+import { login as loginMiddleware, logout as logoutMiddleware, notLoggedIn, verifyJWT, checkRole } from "../../../middlewares/auth";
 
 class UserController {
     public router: Router;
@@ -12,11 +12,11 @@ class UserController {
 
     private initializeRoutes() {
         this.router.post("/", this.create); // POST /users
-        this.router.get("/", this.findAll); // GET /users
-        this.router.get("/:id", this.findById); // GET /users/:id
+        this.router.get("/", verifyJWT, checkRole(["Admin"]), this.findAll); // GET /users
+        this.router.get("/:id", verifyJWT, checkRole(["Admin"]), this.findById); // GET /users/:id
         this.router.put("/:id", this.update); // PUT /users/:id
         this.router.delete("/:id", this.delete); // DELETE /users/:id
-        this.router.get("/email/:email", this.findByEmail); // GET /users/email/:email
+        this.router.get("/email/:email", verifyJWT, checkRole(["Admin"]), this.findByEmail);// GET /users/email/:email
 
         // Rotas de autenticação
         this.router.post("/login", notLoggedIn, this.login); // POST /users/login

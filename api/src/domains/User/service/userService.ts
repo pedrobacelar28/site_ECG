@@ -1,14 +1,16 @@
 import { Prisma } from "@prisma/client";
 import prisma from "../../../../config/prismaclient";
+import { hash } from "bcryptjs";
 
 class UserService {
     // Método para criar um novo usuário
     async create(body: Prisma.UserCreateInput) {
+        const hashedPassword = await hash(body.senha, 10); // Criptografando a senha
         return await prisma.user.create({
             data: {
                 nome: body.nome,
                 email: body.email,
-                senha: body.senha,
+                senha: hashedPassword, // Usando a senha criptografada
                 cargo: body.cargo
             }
         });
