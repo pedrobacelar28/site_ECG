@@ -23,9 +23,17 @@ class ECGService {
         });
     }
 
-    // Método para listar todos os ECGs
-    async findAll() {
-        return await prisma.eCG.findMany();
+    // Método para listar ECGs com paginação
+    async findAllWithPagination(offset: number, limit: number) {
+        const ecgs = await prisma.eCG.findMany({
+            skip: offset,
+            take: limit
+        });
+
+        // Retorna o total de ECGs para calcular as páginas
+        const total = await prisma.eCG.count();
+
+        return { ecgs, total };
     }
 
     // Método para atualizar um ECG

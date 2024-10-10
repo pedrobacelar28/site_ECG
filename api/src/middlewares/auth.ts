@@ -91,10 +91,23 @@ export function notLoggedIn(req: Request, res: Response, next: NextFunction) {
     const token = cookieExtractor(req);
 
     if (token) {
-        return res.status(400).json({ error: "Você já está logado!" });
+        try {
+            // Tente verificar o token
+            const decoded = verify(token, process.env.SECRET_KEY || "") as JwtPayload;
+            
+            if (decoded) {
+                // Se o token for válido, bloqueia o acesso ao login
+                return res.status(400).json({ error: "Você já está logado!" });
+            }
+        } catch (error) {
+            // Se o token for inválido ou expirado, permita o acesso
+            console.log("Token inválido ou expirado:", error.message);
+            next();
+        }
+    } else {
+        // Se não houver token, permitir o acesso
+        next();
     }
-
-    next();
 }
 
 // Função de logout

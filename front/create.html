@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
+    <title>Criar Novo Usuário</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -14,7 +14,7 @@
             height: 100vh;
             margin: 0;
         }
-        .login-container {
+        .create-user-container {
             background-color: white;
             padding: 20px;
             border-radius: 5px;
@@ -22,18 +22,25 @@
             max-width: 300px;
             width: 100%;
         }
-        .login-container h2 {
+        .create-user-container h2 {
             margin-bottom: 20px;
             text-align: center;
         }
-        .login-container input {
+        .create-user-container input {
             width: 92.8%;
             padding: 10px;
             margin: 6px 0;
             border: 1px solid #ccc;
             border-radius: 5px;
         }
-        .login-container button {
+        .create-user-container select {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .create-user-container button {
             width: 100%;
             padding: 10px;
             background-color: #4CAF50;
@@ -42,10 +49,10 @@
             border-radius: 5px;
             cursor: pointer;
         }
-        .login-container button:hover {
+        .create-user-container button:hover {
             background-color: #45a049;
         }
-        .login-container a {
+        .create-user-container a {
             text-align: center;
             display: block;
             margin-top: 15px;
@@ -56,40 +63,47 @@
 </head>
 <body>
 
-<div class="login-container">
-    <h2>Login</h2>
-    <form id="loginForm">
-        <input type="text" id="email" name="email" placeholder="Email" required>
+<div class="create-user-container">
+    <h2>Criar Novo Usuário</h2>
+    <form id="createUserForm">
+        <input type="text" id="nome" name="nome" placeholder="Nome" required>
+        <input type="email" id="email" name="email" placeholder="Email" required>
         <input type="password" id="senha" name="senha" placeholder="Senha" required>
-        <button type="submit">Entrar</button>
+        <select id="cargo" name="cargo" required>
+            <option value="">Selecione o cargo</option>
+            <option value="Admin">Admin</option>
+            <option value="User">Usuário</option>
+        </select>
+        <button type="submit">Criar Usuário</button>
     </form>
     <p id="message"></p>
-    <a href="create.html">Criar novo usuário</a> <!-- Link para a página de criação -->
+    <a href="login.html">Já tem uma conta? Fazer login</a> <!-- Link para o login -->
 </div>
 
 <script>
-    document.getElementById('loginForm').addEventListener('submit', async function(event) {
+    document.getElementById('createUserForm').addEventListener('submit', async function(event) {
         event.preventDefault();
-        
+
+        const nome = document.getElementById('nome').value;
         const email = document.getElementById('email').value;
         const senha = document.getElementById('senha').value;
+        const cargo = document.getElementById('cargo').value;
 
         try {
-            const response = await fetch('http://localhost:3030/api/users/login', {
+            const response = await fetch('http://localhost:3030/api/users', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ email, senha })
+                body: JSON.stringify({ nome, email, senha, cargo })
             });
 
             if (response.ok) {
-                const data = await response.json();
-                document.getElementById('message').innerText = "Login bem-sucedido!";
-                // Redirecionar ou manipular o token de autenticação conforme necessário
+                document.getElementById('message').innerText = "Usuário criado com sucesso!";
+                // Redirecionar para a página de login ou fazer outra ação
             } else {
                 const error = await response.json();
-                document.getElementById('message').innerText = error.error || "Erro ao fazer login.";
+                document.getElementById('message').innerText = error.error || "Erro ao criar usuário.";
             }
         } catch (error) {
             document.getElementById('message').innerText = "Erro de rede. Tente novamente.";

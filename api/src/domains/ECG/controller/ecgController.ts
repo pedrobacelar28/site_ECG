@@ -42,15 +42,26 @@ class ECGController {
         }
     }
 
-    // Método para listar todos os ECGs
+    // Método para listar todos os ECGs com paginação
+    // Método para listar todos os ECGs com paginação
     async findAll(req: Request, res: Response) {
         try {
-            const ecgs = await ECGService.findAll();
-            return res.status(200).json(ecgs);
+            const page = parseInt(req.query.page as string) || 1;
+            const limit = parseInt(req.query.limit as string) || 10;
+            const offset = (page - 1) * limit;
+
+            const { ecgs, total } = await ECGService.findAllWithPagination(offset, limit);
+            const totalPages = Math.ceil(total / limit);
+
+            return res.status(200).json({
+                ecgs,
+                totalPages
+            });
         } catch (error) {
             return res.status(400).json({ error: "Erro ao listar os ECGs." });
-        }
     }
+}
+
 
     // Método para atualizar um ECG
     async update(req: Request, res: Response) {

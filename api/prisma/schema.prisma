@@ -20,6 +20,7 @@ model User {
 
 model ECG {
   id Int @id @default(autoincrement())
+  exam_id String
   oldClassification String
   classification String?
   noise Boolean?

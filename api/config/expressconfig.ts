@@ -13,7 +13,7 @@ dotenv.config();
 export const app: Express = express();
 const options: CorsOptions = {
 	credentials: true,
-	origin: process.env.APP_URL, // Link do front-end que estará em execução
+	origin: 'http://localhost:8080', // Link do front-end que estará em execução
 };
 
 app.use(cors(options));

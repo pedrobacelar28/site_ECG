@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de ECGs</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        .ecg-list {
+            list-style: none;
+            padding: 0;
+        }
+        .ecg-item {
+            background: #fff;
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .ecg-item label {
+            margin-left: 10px;
+        }
+        .ecg-link {
+            text-decoration: none;
+            color: #333;
+            flex: 1;
+            margin-left: 10px;
+        }
+        .checked {
+            background-color: #d4edda;
+        }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .pagination button {
+            margin: 0 5px;
+            padding: 5px 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .pagination button:hover {
+            background-color: #45a049;
+        }
+        .pagination button.disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <h1>Selecione um ECG</h1>
+    <ul class="ecg-list" id="ecgList">
+        <!-- Os itens de ECG serão inseridos aqui dinamicamente -->
+    </ul>
+    <div class="pagination" id="pagination">
+        <!-- Botões de paginação serão inseridos aqui dinamicamente -->
+    </div>
+
+    <script>
+        let currentPage = 1;
+        const itemsPerPage = 10;
+
+        // Função para buscar ECGs do servidor
+        function fetchECGs(page) {
+            // Substitua pela URL da API que retorna os ECGs do banco de dados
+            const url = `/api/ecgs?page=${page}&limit=${itemsPerPage}`;
+            
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    renderECGs(data.ecgs);
+                    renderPagination(data.totalPages, page);
+                })
+                .catch(error => console.error('Erro ao buscar ECGs:', error));
+        }
+
+        // Função para renderizar a lista de ECGs
+        function renderECGs(ecgs) {
+            const ecgList = document.getElementById('ecgList');
+            ecgList.innerHTML = '';
+
+            if (ecgs.length === 0) {
+                ecgList.innerHTML = '<li class="ecg-item">Nenhum ECG encontrado.</li>';
+                return;
+            }
+
+            ecgs.forEach(ecg => {
+                const listItem = document.createElement('li');
+                listItem.className = `ecg-item ${ecg.classificado ? 'checked' : ''}`;
+                listItem.innerHTML = `
+                    <input type="checkbox" class="ecg-checkbox" id="ecg${ecg.id}" ${ecg.classificado ? 'checked' : ''} disabled>
+                    <a href="pagina_classificacao.html?ecg=${ecg.id}&classificado=${ecg.classificado}" class="ecg-link">${ecg.nome}</a>
+                `;
+                ecgList.appendChild(listItem);
+            });
+        }
+
+        // Função para renderizar a paginação
+        function renderPagination(totalPages, currentPage) {
+            const pagination = document.getElementById('pagination');
+            pagination.innerHTML = '';
+
+            if (currentPage > 1) {
+                const prevButton = document.createElement('button');
+                prevButton.textContent = 'Anterior';
+                prevButton.onclick = () => fetchECGs(currentPage - 1);
+                pagination.appendChild(prevButton);
+            }
+
+            for (let i = 1; i <= totalPages; i++) {
+                const button = document.createElement('button');
+                button.textContent = i;
+                button.onclick = () => fetchECGs(i);
+                if (i === currentPage) {
+                    button.classList.add('disabled');
+                }
+                pagination.appendChild(button);
+            }
+
+            if (currentPage < totalPages) {
+                const nextButton = document.createElement('button');
+                nextButton.textContent = 'Próximo';
+                nextButton.onclick = () => fetchECGs(currentPage + 1);
+                pagination.appendChild(nextButton);
+            }
+        }
+
+        // Carregar os ECGs da página inicial
+        fetchECGs(currentPage);
+    </script>
+</body>
+</html>
